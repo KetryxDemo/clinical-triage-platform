@@ -107,3 +107,16 @@ because it is the one that needs configuration to get right.
 
 - Ketryx: Git-based configuration items — setup and file formats
 - Ketryx: eQMS configuration blueprint, for the Ketryx-side quality items
+
+## Documentation
+
+[`DOCUMENTATION.md`](DOCUMENTATION.md) lists the design history file for the
+device: what a Class II, IEC 62304 Class B, AI-enabled SaMD needs, which
+documents Ketryx generates from the items in this repository, which are
+authored and controlled in the EDMS, and what is still missing.
+
+## CI secrets
+
+The device workflow needs two repository secrets: `KETRYX_API_KEY` (an
+organization API key with the *Report test results* scope) and
+`KETRYX_PROJECT` (the Ketryx project ID). The platform workflow needs neither.

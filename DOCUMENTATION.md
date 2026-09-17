@@ -32,18 +32,21 @@ documentation level), FDA AI-enabled device software function guidance
 
 | Document | Basis | Status |
 |---|---|---|
-| Software Development Plan | 62304 5.1 | Draft uploaded |
-| Software Description and Documentation Level Evaluation | FDA software documentation guidance | Draft uploaded |
-| Risk Management Plan | ISO 14971 4.4 | Draft uploaded |
-| Model and Data Management Description | FDA AI-enabled DSF guidance | Draft uploaded |
-| Software Configuration Management Plan | 62304 cl. 8 | Draft uploaded |
-| Software Maintenance and Problem Resolution Plan | 62304 cl. 6, 9 | Draft uploaded |
-| Usability Engineering Summary and IFU outline | IEC 62366-1 | Draft uploaded |
-| Cybersecurity Management Plan | FDA premarket cybersecurity guidance | Draft uploaded |
+| Software Development Plan | 62304 5.1 | Uploaded and approved (controlled) |
+| Software Description and Documentation Level Evaluation | FDA software documentation guidance | Uploaded and approved (controlled) |
+| Risk Management Plan | ISO 14971 4.4 | Uploaded and approved (controlled) |
+| Model and Data Management Description | FDA AI-enabled DSF guidance | Uploaded and approved (controlled) |
+| Software Configuration Management Plan | 62304 cl. 8 | Uploaded and approved (controlled) |
+| Software Maintenance and Problem Resolution Plan | 62304 cl. 6, 9 | Uploaded and approved (controlled) |
+| Usability Engineering Summary and IFU outline | IEC 62366-1 | Uploaded and approved (controlled) |
+| Cybersecurity Management Plan | FDA premarket cybersecurity guidance | Uploaded and approved (controlled) |
 
-The drafts are sample content and need review and approval through the
-*Document* approval rule (Product Managers, R&D Leads, Quality Managers)
-before they count as controlled.
+All eight were approved through the *Document* approval rule (Product
+Managers, R&D Leads, Quality Managers) and are controlled. The content is
+sample material; a real program revises each before its first design review.
+
+All 16 generated documents for `device-v1.1.0` are approved as well, and the
+version passes every release gate.
 
 ## Not yet covered
 
