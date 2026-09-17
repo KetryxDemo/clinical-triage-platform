@@ -1,0 +1,20 @@
+{
+  "name": "clinical-triage-platform",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Sample AI clinical triage SaMD: device engine under design control, non-device platform alongside",
+  "scripts": {
+    "test": "vitest run",
+    "eval": "vitest run device/evals"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.52.0",
+    "zod": "3.23.8",
+    "pino": "9.4.0"
+  },
+  "devDependencies": {
+    "typescript": "5.6.2",
+    "vitest": "2.1.1",
+    "@types/node": "20.16.5"
+  }
+}
