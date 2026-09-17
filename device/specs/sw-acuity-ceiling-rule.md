@@ -1,7 +1,7 @@
 ---
 itemId: sw-acuity-ceiling-rule
 itemType: Software Item Spec
-itemImplements: rq-acuity-ceiling
+itemFulfills: rq-acuity-ceiling
 ---
 
 # Acuity ceiling rule evaluator
