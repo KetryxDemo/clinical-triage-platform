@@ -35,9 +35,16 @@ jobs:
 
       - name: Tag platform release
         run: |
-          BUMP=$(npx -y conventional-recommended-bump -p angular)
-          LAST=$(git tag -l 'v*' --sort=-v:refname | grep -v '^device-' | head -1 | sed 's/^v//')
+          # Platform commits are everything outside device/**. Same
+          # conventional-commit rules as the device train, separate counter.
+          LAST=$(git tag -l 'v*' --sort=-v:refname | head -1 | sed 's/^v//')
           LAST=${LAST:-0.0.0}
+          RANGE=$([ "$LAST" = "0.0.0" ] && echo "HEAD" || echo "v${LAST}..HEAD")
+          LOG=$(git log --format='%s%n%b' "$RANGE" -- . ':!device')
+          if echo "$LOG" | grep -qE '^[a-z]+(\([^)]*\))?!:|^BREAKING CHANGE'; then BUMP=major
+          elif echo "$LOG" | grep -qE '^feat(\([^)]*\))?:'; then BUMP=minor
+          elif echo "$LOG" | grep -qE '^(fix|perf)(\([^)]*\))?:'; then BUMP=patch
+          else echo "No platform release commits since v${LAST}; nothing to tag."; exit 0; fi
           VERSION="v$(npx -y semver -i "$BUMP" "$LAST")"
           git tag "$VERSION"
           git push origin "$VERSION"

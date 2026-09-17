@@ -4,7 +4,7 @@
   "private": true,
   "description": "Sample AI clinical triage SaMD: device engine under design control, non-device platform alongside",
   "scripts": {
-    "test": "vitest run",
+    "test": "vitest run --exclude \"device/evals/**\"",
     "eval": "vitest run device/evals"
   },
   "dependencies": {
