@@ -14,7 +14,7 @@ import { urgentPresentations } from "./datasets/urgent-presentations";
  * @itemId:tc-urgent-regression
  * @itemType:Test Case
  * @itemTitle:"Urgent presentations are never self-care"
- * @itemTests:rq-acuity-ceiling
+ * @itemTests:rq-acuity-ceiling,sw-acuity-ceiling-rule
  */
 export async function urgentPresentationsAreNeverSelfCare(): Promise<void> {
   for (const presentation of urgentPresentations) {
