@@ -49,9 +49,13 @@ jobs:
           api-key: ${{ secrets.KETRYX_API_KEY }}
           ketryx-url: https://demo.ketryx.com
           project: ${{ env.KETRYX_PROJECT }}
-          version: ${{ github.sha }}
-          artifact-path: unit-results.xml
-          artifact-type: junit-xml
+          # The Ketryx version the evidence lands in. The sample pins the
+          # current device version; a release pipeline would derive it from
+          # the device-v* tag being cut.
+          version: device-v1.1.0
+          commit-sha: ${{ github.sha }}
+          build-name: unit-tests
+          test-junit-path: unit-results.xml
 
       - name: Report evaluations to Ketryx
         # if: always() so a FAILING eval is still recorded. The failed execution
@@ -63,9 +67,10 @@ jobs:
           api-key: ${{ secrets.KETRYX_API_KEY }}
           ketryx-url: https://demo.ketryx.com
           project: ${{ env.KETRYX_PROJECT }}
-          version: ${{ github.sha }}
-          artifact-path: eval-results.xml
-          artifact-type: junit-xml
+          version: device-v1.1.0
+          commit-sha: ${{ github.sha }}
+          build-name: device-evaluations
+          test-junit-path: eval-results.xml
 
   tag:
     needs: evaluate
