@@ -47,7 +47,13 @@ coding agent) can assert a probability the arithmetic does not support. Putting
 risk files in Git would invite exactly that.
 
 Traceability still crosses the boundary: a Git requirement is linked as a risk
-control measure from the Ketryx side.
+control measure from the Ketryx side. The sample risk *Under-triage of
+high-acuity presentation* is a Ketryx-native item whose control measure is
+`rq-acuity-ceiling` in this repository.
+
+Quality records (CAPA, nonconformance, complaint, document control) follow the
+Ketryx eQMS configuration blueprint and are tracked as a separate task:
+[issue #1](https://github.com/KetryxDemo/clinical-triage-platform/issues/1).
 
 ## Layout
 
