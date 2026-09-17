@@ -61,7 +61,7 @@ Ketryx eQMS configuration blueprint and are tracked as a separate task:
 device/                 under design control — scanned as Ketryx items
   requirements/*.md     Requirement items
   specs/*.md            Software Item Spec items
-  evals/*.test.ts       Test Cases (parsed by the `tests` parser)
+  evals/*.test.ts       Test Cases (parsed by the `typescript` parser)
   evals/datasets/       evaluation data, versioned with the tests
 platform/               NOT under design control — no items scanned
 .github/workflows/
