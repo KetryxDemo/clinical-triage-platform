@@ -1,43 +1,69 @@
 # Clinical Triage Platform — sample
 
-Sample repository for a **Git-based item-only** Ketryx setup, modelling an
-AI diagnostic product where device and non-device code share one repository.
+Sample repository for a **Git-based item-only** Ketryx setup, modelling an AI
+diagnostic product where device and non-device code share one repository and one
+Ketryx project.
 
 All content here is synthetic sample data.
 
-## The problem this layout solves
+## Two boundaries
 
-A single repository holds both the regulated device and the platform around it.
-Those two things need different release cadences and very different amounts of
-process:
+This layout draws two lines that are easy to confuse. They are independent.
+
+### 1. Device vs. non-device — drawn by path
 
 | | `platform/**` | `device/**` |
 |---|---|---|
 | Release train | `v*` | `device-v*` |
 | Cadence | daily | weekly |
 | Design control | none | full |
-| Ketryx project | Platform Services (Non-Device) | Diagnostic Engine (SaMD) |
-| Items in Ketryx | none | requirements, risks, specs, tests |
+| Scanned as Ketryx items | no | yes |
 
-The split is enforced by **path**, not by discipline. Two Ketryx projects read
-this same repository with different glob patterns and different release refs, so
-a platform commit cannot pull the device into review, and a device commit cannot
-ship without one.
+One repository, one Ketryx project, two tag trains. Ketryx scans **only**
+`device/**` for configuration items, so platform code cannot become a controlled
+item however often it ships. The boundary is enforced by path, not by
+discipline: moving a file into `device/` is what puts it under design control.
+
+`.github/workflows/device-release.yml` runs on `device/**` changes and reports
+test results to Ketryx. `platform-release.yml` runs on everything else and
+reports nothing. The absence of a compliance step in the second file is the
+point.
+
+### 2. Git-owned vs. Ketryx-owned items — drawn by item type
+
+| Item type | Lives in | Why |
+|---|---|---|
+| Requirement | Git | authored with the code that implements it |
+| Software Item Spec | Git | describes code; belongs beside it |
+| Test Case | Git | the test *is* the file |
+| **Risk** | **Ketryx** | probability arithmetic is computed, not authored |
+| **CAPA, complaint, nonconformance** | **Ketryx** | quality records, no code counterpart |
+
+Risks are deliberately **not** in this repository. On the Ketryx Risk schema,
+likelihood (P1), harm probability (P2), total probability, severity, and risk
+evaluation are read-only — computed by its rule engine. `P_total` is derived
+from `P1 × P2` deterministically, so no authoring tool (a person, a script, or a
+coding agent) can assert a probability the arithmetic does not support. Putting
+risk files in Git would invite exactly that.
+
+Traceability still crosses the boundary: a Git requirement is linked as a risk
+control measure from the Ketryx side.
 
 ## Layout
 
 ```
 device/                 under design control — scanned as Ketryx items
   requirements/*.md     Requirement items
-  risks/*.md            Risk items
   specs/*.md            Software Item Spec items
   evals/*.test.ts       Test Cases (parsed by the `tests` parser)
+  evals/datasets/       evaluation data, versioned with the tests
 platform/               NOT under design control — no items scanned
 .github/workflows/
-  device-release.yml    cuts device-v* independently of the platform train
+  device-release.yml    evals + Ketryx reporting, then tags device-v*
+  platform-release.yml  tags v*, reports nothing
 ```
 
-## How an item becomes an item
+## How a file becomes an item
 
 Each Markdown file under `device/` is one configuration item. Front matter
 carries identity and traceability; headings under `## Item fields` carry the
@@ -45,39 +71,33 @@ rich-text fields:
 
 ```yaml
 ---
-itemId: risk-under-triage
-itemType: Risk
-itemIsRiskControlledBy: rq-acuity-ceiling, tc-urgent-regression
+itemId: rq-acuity-ceiling
+itemType: Requirement
+Requirement type: Software
 ---
+```
+
+Test files declare what they cover with a tag comment:
+
+```ts
+/** @tests:rq-acuity-ceiling */
 ```
 
 Traceability is authored in the file, by `itemId`, and resolves on sync — so the
 traceability matrix is a consequence of the repository rather than a document
 maintained beside it.
 
-## What is deliberately not in these files
-
-Risk files carry harm, hazard, hazardous situation, and sequence of events.
-They do **not** carry likelihood, total probability, severity, or risk
-evaluation. Those fields are read-only on the Ketryx item schema and are
-computed by its rule engine.
-
-That is the point: `P_total` is derived from `P1 × P2` deterministically, so no
-authoring tool — a person, a script, or a coding agent — can assert a
-probability that the arithmetic does not support.
-
 ## Two ways to split device from non-device
 
 This repository demonstrates the **co-located** option: one repository, path
-globs, a separate tagging action.
+globs, separate tagging workflows.
 
 The alternative is to **split the device into its own repository**, where it
 gets its own semver by construction and no glob is needed. That is cleaner and
 costs a repository move. Both are supported; the co-located form is shown here
-because it is the one that requires configuration to get right.
+because it is the one that needs configuration to get right.
 
 ## Related
 
 - Ketryx: Git-based configuration items — setup and file formats
-- Ketryx: system-of-systems, for composing device and non-device versions at a
-  system level
+- Ketryx: eQMS configuration blueprint, for the Ketryx-side quality items
