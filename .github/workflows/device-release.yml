@@ -87,12 +87,20 @@ jobs:
         run: |
           # Only commits touching device/** advance the device version, so the
           # device train does not inherit the platform's daily version churn.
-          BUMP=$(npx -y conventional-recommended-bump -p angular --path device)
+          # Conventional commits decide the bump: feat -> minor, fix/perf ->
+          # patch, a "!" or BREAKING CHANGE footer -> major.
           LAST=$(git tag -l 'device-v*' --sort=-v:refname | head -1 | sed 's/^device-v//')
           LAST=${LAST:-0.0.0}
+          RANGE=$([ "$LAST" = "0.0.0" ] && echo "HEAD" || echo "device-v${LAST}..HEAD")
+          LOG=$(git log --format='%s%n%b' "$RANGE" -- device/)
+          if echo "$LOG" | grep -qE '^[a-z]+(\([^)]*\))?!:|^BREAKING CHANGE'; then BUMP=major
+          elif echo "$LOG" | grep -qE '^feat(\([^)]*\))?:'; then BUMP=minor
+          elif echo "$LOG" | grep -qE '^(fix|perf)(\([^)]*\))?:'; then BUMP=patch
+          else echo "No device-scoped release commits since device-v${LAST}; nothing to tag."; echo "next=" >> "$GITHUB_OUTPUT"; exit 0; fi
           echo "next=$(npx -y semver -i "$BUMP" "$LAST")" >> "$GITHUB_OUTPUT"
 
       - name: Tag device release
+        if: steps.semver.outputs.next != ''
         run: |
           VERSION="device-v${{ steps.semver.outputs.next }}"
           git tag "$VERSION"

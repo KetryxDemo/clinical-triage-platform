@@ -25,5 +25,7 @@ export async function urgentPresentationsAreNeverSelfCare(): Promise<void> {
 }
 
 describe("urgent presentations are never self-care", () => {
-  it("escalates every case in the urgent slice", urgentPresentationsAreNeverSelfCare);
+  // The @tests tag in the test name is what links the JUnit result to the
+  // Test Case item in Ketryx, so the execution lands on tc-urgent-regression.
+  it("escalates every case in the urgent slice @tests:tc-urgent-regression", urgentPresentationsAreNeverSelfCare);
 });

@@ -24,5 +24,5 @@ export async function everyRecommendationCarriesProvenance(): Promise<void> {
 }
 
 describe("recommendation provenance", () => {
-  it("stamps every recommendation", everyRecommendationCarriesProvenance);
+  it("stamps every recommendation @tests:tc-provenance-stamp", everyRecommendationCarriesProvenance);
 });
