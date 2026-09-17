@@ -1,0 +1,62 @@
+name: Device release
+
+# The device and the surrounding platform live in one repository but release on
+# two independent trains:
+#
+#   platform  ->  tags v*          (daily, not under design control)
+#   device    ->  tags device-v*   (weekly, under design control)
+#
+# This workflow owns the device train. It fires only when device-classified
+# paths change, so platform-only commits never cut a device release and never
+# consume a regulatory review cycle.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'device/**'
+  workflow_dispatch:
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run device evaluations
+        run: npm run eval -- device/evals
+        # The eval suite is the release gate. A failing urgent-presentation
+        # slice fails the job, so no device tag is ever cut from a build whose
+        # risk controls did not hold.
+
+      - name: Report evaluation results to Ketryx
+        run: |
+          ketryx build \
+            --project "$KETRYX_PROJECT" \
+            --version "device-${{ github.ref_name }}" \
+            --test-results device/evals/results.json
+        env:
+          KETRYX_PROJECT: ${{ secrets.KETRYX_DEVICE_PROJECT }}
+          KETRYX_API_KEY: ${{ secrets.KETRYX_API_KEY }}
+
+  tag:
+    needs: evaluate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Derive device semver from conventional commits
+        id: semver
+        run: |
+          # Only commits touching device/** count toward the device version, so
+          # the device semver advances on device change alone.
+          echo "version=$(npx conventional-recommended-bump -p angular --path device)" >> "$GITHUB_OUTPUT"
+
+      - name: Tag device release
+        run: |
+          git tag "device-v${{ steps.semver.outputs.version }}"
+          git push origin "device-v${{ steps.semver.outputs.version }}"
+          # Ketryx watches refs/tags/device-v# on this repository and opens the
+          # matching version. Everything under device/** enters that version as
+          # configuration items; nothing under platform/** does.
