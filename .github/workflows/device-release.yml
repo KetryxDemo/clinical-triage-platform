@@ -1,14 +1,14 @@
 name: Device release
 
-# The device and the surrounding platform live in one repository but release on
-# two independent trains:
+# One repository, one Ketryx project, two release trains.
 #
-#   platform  ->  tags v*          (daily, not under design control)
-#   device    ->  tags device-v*   (weekly, under design control)
+#   platform  ->  tags v*          daily, never enters design control
+#   device    ->  tags device-v*   weekly, fully controlled
 #
-# This workflow owns the device train. It fires only when device-classified
-# paths change, so platform-only commits never cut a device release and never
-# consume a regulatory review cycle.
+# The medical / non-medical boundary is drawn by PATH. Ketryx scans only
+# device/** for configuration items, so platform code cannot become a
+# controlled item no matter how often it ships. This workflow owns the device
+# train and runs only when device-classified paths change.
 
 on:
   push:
@@ -17,46 +17,81 @@ on:
       - 'device/**'
   workflow_dispatch:
 
+env:
+  KETRYX_PROJECT: ${{ secrets.KETRYX_PROJECT }}
+
 jobs:
   evaluate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run device evaluations
-        run: npm run eval -- device/evals
-        # The eval suite is the release gate. A failing urgent-presentation
-        # slice fails the job, so no device tag is ever cut from a build whose
-        # risk controls did not hold.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
 
-      - name: Report evaluation results to Ketryx
-        run: |
-          ketryx build \
-            --project "$KETRYX_PROJECT" \
-            --version "device-${{ github.ref_name }}" \
-            --test-results device/evals/results.json
-        env:
-          KETRYX_PROJECT: ${{ secrets.KETRYX_DEVICE_PROJECT }}
-          KETRYX_API_KEY: ${{ secrets.KETRYX_API_KEY }}
+      - run: npm ci
+
+      - name: Run unit tests
+        run: npm test -- --reporter=junit --outputFile=unit-results.xml
+
+      - name: Run device evaluations
+        # The eval suite is the release gate: the urgent-presentation slice must
+        # be fully green. A regression here fails the job, so no device tag is
+        # ever cut from a build whose risk controls did not hold.
+        run: npm run eval -- device/evals --reporter=junit --outputFile=eval-results.xml
+
+      - name: Report unit tests to Ketryx
+        if: always()
+        uses: ketryx/ketryx-github-action@v1
+        with:
+          api-key: ${{ secrets.KETRYX_API_KEY }}
+          ketryx-url: https://demo.ketryx.com
+          project: ${{ env.KETRYX_PROJECT }}
+          version: ${{ github.sha }}
+          artifact-path: unit-results.xml
+          artifact-type: junit-xml
+
+      - name: Report evaluations to Ketryx
+        # if: always() so a FAILING eval is still recorded. The failed execution
+        # is the evidence that the gate worked — dropping it on failure would
+        # leave a gap in the record exactly where it matters most.
+        if: always()
+        uses: ketryx/ketryx-github-action@v1
+        with:
+          api-key: ${{ secrets.KETRYX_API_KEY }}
+          ketryx-url: https://demo.ketryx.com
+          project: ${{ env.KETRYX_PROJECT }}
+          version: ${{ github.sha }}
+          artifact-path: eval-results.xml
+          artifact-type: junit-xml
 
   tag:
     needs: evaluate
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with:
+          fetch-depth: 0
 
-      - name: Derive device semver from conventional commits
+      - name: Derive device semver from device-scoped commits
         id: semver
         run: |
-          # Only commits touching device/** count toward the device version, so
-          # the device semver advances on device change alone.
-          echo "version=$(npx conventional-recommended-bump -p angular --path device)" >> "$GITHUB_OUTPUT"
+          # Only commits touching device/** advance the device version, so the
+          # device train does not inherit the platform's daily version churn.
+          BUMP=$(npx -y conventional-recommended-bump -p angular --path device)
+          LAST=$(git tag -l 'device-v*' --sort=-v:refname | head -1 | sed 's/^device-v//')
+          LAST=${LAST:-0.0.0}
+          echo "next=$(npx -y semver -i "$BUMP" "$LAST")" >> "$GITHUB_OUTPUT"
 
       - name: Tag device release
         run: |
-          git tag "device-v${{ steps.semver.outputs.version }}"
-          git push origin "device-v${{ steps.semver.outputs.version }}"
+          VERSION="device-v${{ steps.semver.outputs.next }}"
+          git tag "$VERSION"
+          git push origin "$VERSION"
           # Ketryx watches refs/tags/device-v# on this repository and opens the
-          # matching version. Everything under device/** enters that version as
-          # configuration items; nothing under platform/** does.
+          # matching version. Everything under device/** enters it as a
+          # configuration item; nothing under platform/** ever does.

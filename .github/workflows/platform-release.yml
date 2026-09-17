@@ -1,0 +1,43 @@
+name: Platform release
+
+# The non-device train. Ships daily, reports nothing to Ketryx, has no design
+# controls and no approval gate. It is here to make the asymmetry explicit:
+# the same repository, a parallel pipeline, and deliberately no compliance step.
+#
+# Note what is NOT in this file: no Ketryx action, no eval gate, no risk review.
+# If a change needs any of those, it belongs under device/ instead — moving the
+# file is what moves it under design control.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'device/**'
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+
+      - name: Tag platform release
+        run: |
+          BUMP=$(npx -y conventional-recommended-bump -p angular)
+          LAST=$(git tag -l 'v*' --sort=-v:refname | grep -v '^device-' | head -1 | sed 's/^v//')
+          LAST=${LAST:-0.0.0}
+          VERSION="v$(npx -y semver -i "$BUMP" "$LAST")"
+          git tag "$VERSION"
+          git push origin "$VERSION"
